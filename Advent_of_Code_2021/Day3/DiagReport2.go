@@ -6,11 +6,6 @@ import (
 	"strings"
 )
 
-func remove(s []string, j int) []string {
-	s[j] = s[len(s)-1]
-	return s[:len(s)-1]
-}
-
 func DiagReport2(fileName string) {
 	strArr, err := ioutil.ReadFile(fileName)
 
@@ -22,25 +17,8 @@ func DiagReport2(fileName string) {
 	list := strings.Split(master, "\n")
 	list = list[:len(list)-1]
 
-	bitWidth := len(list[0])
-	columnTracker := make([]Pair, bitWidth)
-	fmt.Println("Bitwidth ->", bitWidth)
-
-	for _, v := range list {
-		if v == "" {
-			continue
-		}
-		for i := 0; i < bitWidth; i++ {
-			if v[i] == '1' {
-				columnTracker[i].one++
-			} else {
-				columnTracker[i].zero++
-			}
-		}
-	}
-
-	gamma := getGamma(columnTracker)
-	epsilon := getEpsilon(columnTracker)
+	gamma := calcGamma(list)
+	epsilon := inverseBinString(gamma)
 	fmt.Println("Gamma ->", gamma)
 	fmt.Println("Epsilon ->", epsilon)
 
@@ -65,27 +43,10 @@ func parseList(s string, list []string, ge bool) string {
 		list = newList
 
 		if ge {
-			s = recalcGamma(list)
+			s = calcGamma(list)
 		} else {
-			s = inverseBinString(recalcGamma(list))
+			s = inverseBinString(calcGamma(list))
 		}
 	}
 	return list[0]
-}
-
-func recalcGamma(list []string) string {
-	bitWidth := len(list[0])
-	columnTracker := make([]Pair, bitWidth)
-
-	for _, v := range list {
-		for i := 0; i < bitWidth; i++ {
-			if v[i] == '1' {
-				columnTracker[i].one++
-			} else {
-				columnTracker[i].zero++
-			}
-		}
-	}
-
-	return getGamma(columnTracker)
 }

@@ -23,24 +23,8 @@ func DiagReport(fileName string) {
 	list := strings.Split(master, "\n")
 	list = list[:len(list)-1]
 
-	bitWidth := len(list[0])
-	columnTracker := make([]Pair, bitWidth)
-	fmt.Println("Bitwidth -> ", bitWidth)
-	fmt.Println("List[0] ->", list[0])
-
-	for _, v := range list {
-		for i := 0; i < bitWidth; i++ {
-			if v[i] == '1' {
-				columnTracker[i].one++
-			} else {
-				columnTracker[i].zero++
-			}
-		}
-	}
-
-	gamma := getGamma(columnTracker)
+	gamma := calcGamma(list)
 	epsilon := inverseBinString(gamma)
-	fmt.Println(columnTracker)
 
 	// function here that converts binary strings to decimal numbers
 	fmt.Println(gamma, epsilon)
@@ -98,4 +82,21 @@ func inverseBinString(s string) string {
 		}
 	}
 	return retVal
+}
+
+func calcGamma(list []string) string {
+	bitWidth := len(list[0])
+	columnTracker := make([]Pair, bitWidth)
+
+	for _, v := range list {
+		for i := 0; i < bitWidth; i++ {
+			if v[i] == '1' {
+				columnTracker[i].one++
+			} else {
+				columnTracker[i].zero++
+			}
+		}
+	}
+
+	return getGamma(columnTracker)
 }
