@@ -1,5 +1,7 @@
 package main
 
+//Solution 39902
+
 import (
 	"bufio"
 	"fmt"
