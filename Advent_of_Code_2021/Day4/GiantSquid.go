@@ -20,6 +20,7 @@ type Board struct {
 	rows      int
 	columns   int
 	unmarkSum int
+	solved    bool
 	data      [][]Tile
 }
 
@@ -37,17 +38,18 @@ func (e Board) printMarked() {
 	fmt.Println()
 }
 
-func (e Board) CheckWin() bool {
+func (e Board) CheckWin(cond bool) bool {
 	// Row has won
 	for _, r := range e.data {
 		isWin := true
 		for _, v := range r {
-			if v.marked == false {
+			if v.marked == !cond {
 				isWin = false
 				break
 			}
 		}
 		if isWin {
+			e.solved = true
 			return true
 		}
 	}
@@ -56,12 +58,13 @@ func (e Board) CheckWin() bool {
 	for i := range e.data {
 		isWin := true
 		for _, r := range e.data {
-			if r[i].marked == false {
+			if r[i].marked == !cond {
 				isWin = false
 				break
 			}
 		}
 		if isWin {
+			e.solved = true
 			return true
 		}
 	}
@@ -73,11 +76,11 @@ func getBoard(idx int, list []Board) Board {
 	return list[idx]
 }
 
-func (e *Board) findNumber(n int) bool {
+func (e *Board) findNumber(n int, winCondition bool) bool {
 	for _, r := range e.data {
 		for i, v := range r {
-			if v.value == n && r[i].marked == false {
-				r[i].marked = true
+			if v.value == n && r[i].marked != winCondition {
+				r[i].marked = winCondition
 				e.unmarkSum -= v.value
 				return true
 			}
@@ -93,7 +96,7 @@ func NewTile(val int, marked bool) Tile {
 	return *p
 }
 
-func NewTileSet(s string, r, c int) (int, [][]Tile) {
+func NewTileSet(s string, r, c int, initialState bool) (int, [][]Tile) {
 	tiles := strings.Fields(s)
 
 	sum := 0
@@ -105,23 +108,24 @@ func NewTileSet(s string, r, c int) (int, [][]Tile) {
 			newValue, err := strconv.Atoi(currVal)
 			checkError(err)
 			sum += newValue
-			newTileSet[i] = append(newTileSet[i], NewTile(newValue, false))
+			newTileSet[i] = append(newTileSet[i], NewTile(newValue, initialState))
 		}
 	}
 
 	return sum, newTileSet
 }
 
-func NewBoard(s string) *Board {
+func NewBoard(s string, marked bool) *Board {
 	p := new(Board)
 	p.rows = 5
 	p.columns = 5
-	p.unmarkSum, p.data = NewTileSet(s, p.rows, p.columns)
+	p.solved = false
+	p.unmarkSum, p.data = NewTileSet(s, p.rows, p.columns, marked)
 	return p
 }
 
-func parseBoard(s string) Board {
-	return *NewBoard(s)
+func parseBoard(s string, marked bool) Board {
+	return *NewBoard(s, marked)
 }
 
 func prettyPrintBoardFromSet(bNum int, list []Board) {
@@ -144,6 +148,23 @@ func prettyPrintBoardFromSet(bNum int, list []Board) {
 	fmt.Println("---BOARD---")
 }
 
+func prettyPrintBoard(b Board) {
+	fmt.Println()
+	fmt.Println("---BOARD---")
+	sum := 0
+	for _, r := range b.data {
+		fmt.Printf("[ ")
+		for _, v := range r {
+			fmt.Printf("%v::%v ", v.value, v.marked)
+			if v.marked == false {
+				sum += v.value
+			}
+		}
+		fmt.Println("]")
+	}
+	fmt.Println("---BOARD---")
+}
+
 func GiantSquid(fileName string) {
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -163,7 +184,7 @@ func GiantSquid(fileName string) {
 
 	for scanner.Scan() {
 		if scanner.Text() == "" && tempString != "" {
-			boardSet = append(boardSet, parseBoard(tempString))
+			boardSet = append(boardSet, parseBoard(tempString, false))
 			tempString = ""
 			continue
 		}
@@ -173,7 +194,7 @@ func GiantSquid(fileName string) {
 	for _, v := range moveset {
 		move, err := strconv.Atoi(v)
 		checkError(err)
-		win, boardnum, winningMove := checkMove(move, &boardSet)
+		win, boardnum, winningMove := checkMove(move, &boardSet, true)
 		if win {
 			unmarkedSum := getBoard(boardnum, boardSet).unmarkSum
 			// Do a function here that gives us the answer
@@ -189,18 +210,28 @@ func GiantSquid(fileName string) {
 }
 
 // Executive Logic Region
-func checkMove(move int, boardSet *[]Board) (bool, int, int) {
+func checkMove(move int, boardSet *[]Board, winCondition bool) (bool, int, int) {
 
 	// Check every board!
+	num := 0
+	plato := false
 	for i := range *boardSet {
 		currBoard := &(*boardSet)[i]
-		find := (*currBoard).findNumber(move)
-		if find {
-			won := currBoard.CheckWin()
-			if won {
-				return true, i, move
+		if currBoard.solved == false {
+			find := (*currBoard).findNumber(move, winCondition)
+			if find {
+				won := currBoard.CheckWin(winCondition)
+				if won {
+					(*currBoard).solved = true
+					plato = true
+					num = i
+				}
 			}
 		}
+	}
+
+	if plato {
+		return true, num, move
 	}
 
 	return false, 0, move
