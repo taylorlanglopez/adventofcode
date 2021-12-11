@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func checkError(e error) {
+func CheckError(e error) {
 	if e != nil {
 		fmt.Println("Error ->", e)
 		log.Fatal(e)
